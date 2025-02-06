@@ -1,6 +1,6 @@
 import { IsNumber, IsString, IsEmail } from 'class-validator';
 
-export class UserDto {
+export class CreateUserDto {
   @IsNumber()
   id: number; // Perbaiki tipe data dari string ke number
 

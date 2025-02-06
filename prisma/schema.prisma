@@ -18,5 +18,5 @@ model User {
   name     String
   email    String @unique
   password String
-  roleId   String @default("USER")
+  // roleId   String @default("USER")
 }
