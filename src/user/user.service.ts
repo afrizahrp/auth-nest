@@ -10,7 +10,7 @@ export class UserService {
   async create(dto: CreateUserDto) {
     const user = await this.prisma.user.findUnique({
       where: {
-        email: dto.email,
+        name: dto.name,
       },
     });
 
@@ -20,7 +20,8 @@ export class UserService {
 
     const newUser = await this.prisma.user.create({
       data: {
-        ...dto,
+        name: dto.name,
+        email: dto.email,
         password: await hash(dto.password, 10),
       },
     });
@@ -29,10 +30,10 @@ export class UserService {
     return result;
   }
 
-  async findByEmail(email: string) {
+  async findByName(name: string) {
     return this.prisma.user.findUnique({
       where: {
-        email,
+        name,
       },
     });
   }
