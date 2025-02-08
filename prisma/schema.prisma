@@ -6,11 +6,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client-postgresql"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("POSTGRESQL_URL")
 }
 
 model sys_MasterTableStatus {
@@ -27,13 +28,8 @@ model sys_MasterTableStatus {
   floor            im_Floor[]
   shelf            im_Shelf[]
   row              im_Row[]
-  // categories    im_Categories[]
-  // categoryTypes im_CategoryTypes[]
-  // subCategories im_SubCategories[]
   brands           im_Brands[]
   im_CategoryTypes im_CategoryTypes[]
-  // userRole         sys_UserRole[]
-  // user             sys_User[]
 }
 
 model sys_MasterShowedStatus {
@@ -61,19 +57,10 @@ model sys_TrxTableStatus {
 }
 
 model sys_UserRole {
-  id      String  @id @db.VarChar(50)
-  name    String  @unique @db.VarChar(50)
-  remarks String? @db.VarChar(250)
-
-  // iStatus    Int        @db.SmallInt
-  // createdBy  String?    @db.Char(10)
-  // createdAt  DateTime?  @default(now())
-  // updatedBy  String?    @db.Char(10)
-  // updatedAt  DateTime?
-  // company_id String?    @db.Char(5)
-  // branch_id  String?    @db.Char(10)
-  users sys_User[]
-  // status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+  id      String     @id @db.VarChar(50)
+  name    String     @unique @db.VarChar(50)
+  remarks String?    @db.VarChar(250)
+  users   sys_User[]
 }
 
 model sys_User {
@@ -84,74 +71,8 @@ model sys_User {
   image              String?      @db.VarChar(255)
   password           String       @db.VarChar(255)
   hashedRefreshToken String?      @db.VarChar(255)
-  // iStatus            Int                   @db.SmallInt
-  // createdBy          String?               @db.Char(10)
-  // createdAt          DateTime?             @default(now())
-  // updatedBy          String?               @db.Char(10)
-  // updatedAt          DateTime?
-  // company_id         String?               @default("BIS") @db.Char(5)
-  // branch_id          String?               @default("BIS") @db.Char(10)
   userRole           sys_UserRole @relation(fields: [role_id], references: [id])
-  // status             sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
-
-  // emailVerified DateTime?
-  // isTwoFactorEnabled Boolean @default(false)
-  // twoFactorConfirmation sys_UserTwoFactorConfirmation?
-  // userAccounts          sys_UserAccounts[]
 }
-
-// model sys_UserAccounts {
-//   id                String   @id @default(cuid())
-//   userId            String
-//   type              String   @db.VarChar(50)
-//   provider          String   @db.VarChar(50)
-//   providerAccountId String   @db.VarChar(50)
-//   refresh_token     String?  @db.Text
-//   access_token      String?  @db.Text
-//   expires_at        Int?     @db.Integer
-//   token_type        String?  @db.VarChar(50)
-//   scope             String?  @db.VarChar(255)
-//   id_token          String?  @db.Text
-//   session_state     String?  @db.Text
-//   users             sys_User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-//   @@unique([provider, providerAccountId])
-// }
-
-// model sys_UserVerificationToken {
-//   id      String   @id @default(cuid())
-//   email   String   @db.VarChar(100)
-//   token   String   @unique
-//   expires DateTime
-
-//   @@unique([email, token])
-// }
-
-// model sys_UserPasswordResetToken {
-//   id      String   @id @default(cuid())
-//   email   String   @db.VarChar(100)
-//   token   String   @unique
-//   expires DateTime
-
-//   @@unique([email, token])
-// }
-
-// model sys_UserTwoFactorToken {
-//   id      String   @id @default(cuid())
-//   email   String   @db.VarChar(100)
-//   token   String   @unique @db.VarChar(255)
-//   expires DateTime
-
-//   @@unique([email, token])
-// }
-
-// model sys_UserTwoFactorConfirmation {
-//   id     String   @id @default(cuid())
-//   userId String
-//   users  sys_User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-//   @@unique([userId])
-// }
 
 model sys_Migration_log {
   id             Int      @id @default(autoincrement())
@@ -243,7 +164,7 @@ model im_Warehouse {
  * Product grouping
  */
 model im_Uoms {
-  id         String   @id @db.Char(10)
+  id         String   @db.Char(10)
   name       String?  @db.VarChar(150)
   iStatus    Int      @db.SmallInt
   remarks    String?  @db.VarChar(250)
@@ -253,8 +174,10 @@ model im_Uoms {
   updatedAt  DateTime
   company_id String   @db.Char(5)
   branch_id  String   @db.Char(10)
+
   // categoryType        CategoryTypes[]
   // products            Products[]
+  @@id([company_id, id], map: "pk_im_Uoms")
 }
 
 model im_CategoryTypes {
@@ -293,10 +216,6 @@ model im_Categories {
   branch_id        String             @db.Char(10)
   href             String?            @db.VarChar(150)
   icon             String?            @db.VarChar(50)
-  // status        sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
-  // categoryTypes im_CategoryTypes      @relation(fields: [type], references: [id], onUpdate: NoAction)
-  // subCategories im_SubCategories[]
-  // images        im_CategoryImages[]
   im_SubCategories im_SubCategories[]
 
   @@id([id, company_id], map: "pk_im_Categories")
@@ -316,34 +235,15 @@ model im_SubCategories {
   updatedAt   DateTime
   company_id  String        @db.Char(5)
   branch_id   String        @db.Char(10)
-  // status      sys_MasterTableStatus @relation(fields: [iStatus], references: [id], onUpdate: NoAction)
   category    im_Categories @relation(fields: [category_id], references: [id])
 
   @@id([category_id, id, company_id], map: "pk_im_SubCategories")
   @@unique([category_id, id, company_id], name: "category_id_id_company_id") // Compound unique key
 }
 
-// model im_CategoryImages {
-//   id          Int           @default(autoincrement())
-//   category_id String        @db.Char(10)
-//   imageURL    String        @db.VarChar(250)
-//   isPrimary   Boolean?      @default(false)
-//   deleted     Boolean       @default(false)
-//   createdBy   String?       @db.Char(10)
-//   createdAt   DateTime      @default(now())
-//   updatedBy   String?       @db.Char(10)
-//   updatedAt   DateTime
-//   company_id  String        @db.Char(5)
-//   branch_id   String        @db.Char(10)
-//   // categories  im_Categories @relation(fields: [category_id, company_id], references: [id, company_id])
-
-//   @@id([id, company_id], map: "pk_im_CategoryImages")
-//   @@index([category_id, company_id])
-// }
-
 model im_Brands {
-  id         String                @id @db.Char(10)
-  name       String?               @db.VarChar(50)
+  id         String                @db.Char(10)
+  name       String                @db.VarChar(50)
   slug       String?               @db.VarChar(50)
   iStatus    Int                   @db.SmallInt
   remarks    String?               @db.VarChar(250)
@@ -354,7 +254,8 @@ model im_Brands {
   company_id String                @db.Char(5)
   branch_id  String                @db.Char(10)
   status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id], onUpdate: NoAction)
-  // products            Products[]
+
+  @@id([company_id, id], map: "pk_im_Brands")
 }
 
 /**
@@ -383,17 +284,8 @@ model im_Products {
   updatedAt      DateTime
   company_id     String   @db.Char(5)
   branch_id      String   @db.Char(10)
-  // stocks         im_ProductStocks[]
-  // images         im_ProductImages[]
-  // descriptions   im_ProductDescs[]
 
   @@id([company_id, id], map: "pk_im_Products")
-  // category            Categories?        @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  // subcategory         SubCategories?      @relation(fields: [subCategory_id], references: [id], onUpdate: NoAction)
-  // brands              Brands?             @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
-  // status              MasterTableStatus  @relation(fields: [iStatus], references: [id], onUpdate: NoAction)
-  // uom                 Uoms?              @relation(fields: [uom_id], references: [id])
-  // showStatus          MasterShowedStatus @relation(fields: [iShowedStatus], references: [id])
   @@index([company_id, id])
 }
 
@@ -432,7 +324,6 @@ model im_ProductStocks {
   updatedAt          DateTime
   company_id         String   @db.Char(5)
   branch_id          String   @db.Char(10)
-  // products           im_Products @relation(fields: [id, company_id], references: [id, company_id])
 
   @@id([company_id, warehouse_id, id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
   @@index([company_id, warehouse_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
@@ -485,33 +376,3 @@ model im_ProductStockCard {
   @@id([company_id, warehouse_id, doc_id, mutation_id, product_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
   @@index([company_id, warehouse_id, doc_id, mutation_id, product_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
 }
-
-// model im_ProductDescs {
-//   id           String      @id @db.Char(20)
-//   descriptions String?     @db.Text
-//   createdBy    String?     @db.Char(10)
-//   createdAt    DateTime    @default(now())
-//   updatedBy    String?     @db.Char(10)
-//   updatedAt    DateTime
-//   company_id   String      @db.Char(5)
-//   branch_id    String      @db.Char(10)
-//   // products              Products      @relation(fields: [id], references: [id])
-//   products     im_Products @relation(fields: [id, company_id], references: [id, company_id])
-// }
-
-// model im_ProductImages {
-//   id         String      @id @db.Char(25)
-//   product_id String      @db.Char(20)
-//   imageURL   String      @db.VarChar(250)
-//   isPrimary  Boolean     @default(false)
-//   isDeleted  Boolean     @default(false)
-//   createdBy  String?     @db.Char(10)
-//   createdAt  DateTime    @default(now())
-//   updatedBy  String?     @db.Char(10)
-//   updatedAt  DateTime
-//   company_id String      @db.Char(5)
-//   branch_id  String      @db.Char(10)
-//   products   im_Products @relation(fields: [product_id, company_id], references: [id, company_id])
-
-//   @@index([product_id])
-// }
