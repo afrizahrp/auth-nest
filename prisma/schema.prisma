@@ -13,11 +13,505 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int     @id @default(autoincrement())
-  name     String  @unique
-  email    String
-  password String
-  image    String?
-  roleId   String  @default("GUEST")
+model sys_MasterTableStatus {
+  id               Int                @id @db.SmallInt
+  name             String?            @db.VarChar(50)
+  remarks          String?            @db.VarChar(150)
+  createdBy        String?            @db.Char(10)
+  createdAt        DateTime           @default(now())
+  updatedBy        String?            @db.Char(10)
+  updatedAt        DateTime
+  company_id       String             @db.Char(5)
+  branch_id        String             @db.Char(10)
+  warehouse        im_Warehouse[]
+  floor            im_Floor[]
+  shelf            im_Shelf[]
+  row              im_Row[]
+  // categories    im_Categories[]
+  // categoryTypes im_CategoryTypes[]
+  // subCategories im_SubCategories[]
+  brands           im_Brands[]
+  im_CategoryTypes im_CategoryTypes[]
+  // userRole         sys_UserRole[]
+  // user             sys_User[]
 }
+
+model sys_MasterShowedStatus {
+  id         Int       @id @db.SmallInt
+  name       String    @db.VarChar(50)
+  remarks    String?   @db.VarChar(150)
+  createdBy  String    @db.Char(10)
+  createdAt  DateTime? @default(now())
+  updatedBy  String?   @db.Char(10)
+  updatedAt  DateTime
+  company_id String    @db.Char(5)
+  branch_id  String    @db.Char(10)
+}
+
+model sys_TrxTableStatus {
+  id         Int      @id @db.SmallInt
+  name       String?  @db.VarChar(50)
+  remarks    String?  @db.VarChar(150)
+  createdBy  String?  @db.Char(10)
+  createdAt  DateTime
+  updatedBy  String?  @db.Char(10)
+  updatedAt  DateTime
+  company_id String   @db.Char(5)
+  branch_id  String   @db.Char(10)
+}
+
+model sys_UserRole {
+  id      String  @id @db.VarChar(50)
+  name    String  @unique @db.VarChar(50)
+  remarks String? @db.VarChar(250)
+
+  // iStatus    Int        @db.SmallInt
+  // createdBy  String?    @db.Char(10)
+  // createdAt  DateTime?  @default(now())
+  // updatedBy  String?    @db.Char(10)
+  // updatedAt  DateTime?
+  // company_id String?    @db.Char(5)
+  // branch_id  String?    @db.Char(10)
+  users sys_User[]
+  // status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+}
+
+model sys_User {
+  id                 Int          @id @default(autoincrement()) @db.SmallInt
+  role_id            String       @default("GUEST") @db.VarChar(50)
+  name               String       @unique @db.VarChar(50)
+  email              String       @unique @db.VarChar(100)
+  image              String?      @db.VarChar(255)
+  password           String       @db.VarChar(255)
+  hashedRefreshToken String?      @db.VarChar(255)
+  // iStatus            Int                   @db.SmallInt
+  // createdBy          String?               @db.Char(10)
+  // createdAt          DateTime?             @default(now())
+  // updatedBy          String?               @db.Char(10)
+  // updatedAt          DateTime?
+  // company_id         String?               @default("BIS") @db.Char(5)
+  // branch_id          String?               @default("BIS") @db.Char(10)
+  userRole           sys_UserRole @relation(fields: [role_id], references: [id])
+  // status             sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+
+  // emailVerified DateTime?
+  // isTwoFactorEnabled Boolean @default(false)
+  // twoFactorConfirmation sys_UserTwoFactorConfirmation?
+  // userAccounts          sys_UserAccounts[]
+}
+
+// model sys_UserAccounts {
+//   id                String   @id @default(cuid())
+//   userId            String
+//   type              String   @db.VarChar(50)
+//   provider          String   @db.VarChar(50)
+//   providerAccountId String   @db.VarChar(50)
+//   refresh_token     String?  @db.Text
+//   access_token      String?  @db.Text
+//   expires_at        Int?     @db.Integer
+//   token_type        String?  @db.VarChar(50)
+//   scope             String?  @db.VarChar(255)
+//   id_token          String?  @db.Text
+//   session_state     String?  @db.Text
+//   users             sys_User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   @@unique([provider, providerAccountId])
+// }
+
+// model sys_UserVerificationToken {
+//   id      String   @id @default(cuid())
+//   email   String   @db.VarChar(100)
+//   token   String   @unique
+//   expires DateTime
+
+//   @@unique([email, token])
+// }
+
+// model sys_UserPasswordResetToken {
+//   id      String   @id @default(cuid())
+//   email   String   @db.VarChar(100)
+//   token   String   @unique
+//   expires DateTime
+
+//   @@unique([email, token])
+// }
+
+// model sys_UserTwoFactorToken {
+//   id      String   @id @default(cuid())
+//   email   String   @db.VarChar(100)
+//   token   String   @unique @db.VarChar(255)
+//   expires DateTime
+
+//   @@unique([email, token])
+// }
+
+// model sys_UserTwoFactorConfirmation {
+//   id     String   @id @default(cuid())
+//   userId String
+//   users  sys_User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   @@unique([userId])
+// }
+
+model sys_Migration_log {
+  id             Int      @id @default(autoincrement())
+  from_tableName String // Nama tabel yang dimigrasi, misalnya 'floor', 'shelf', dll.
+  to_tableName   String // Nama tabel yang dimigrasi, misalnya 'floor', 'shelf', dll.
+  migratedAt     DateTime // Waktu migrasi terakhir
+  status         String // Status migrasi, misalnya 'success', 'failed'
+}
+
+/**
+ * Item storage location
+ */
+model im_Floor {
+  id         String                @id(map: "pk_ic_floor") @db.Char(5)
+  name       String?               @db.Char(35)
+  iStatus    Int                   @db.SmallInt
+  createdBy  String?               @db.Char(10)
+  createdAt  DateTime
+  updatedBy  String?               @db.Char(10)
+  updatedAt  DateTime
+  company_id String                @db.Char(5)
+  branch_id  String                @db.Char(10)
+  shelf      im_Shelf[]
+  row        im_Row[]
+  status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+}
+
+model im_Shelf {
+  floor_id   String   @db.Char(5)
+  id         String   @db.Char(15)
+  name       String?  @db.Char(35)
+  iStatus    Int      @db.SmallInt
+  createdBy  String?  @db.Char(10)
+  createdAt  DateTime
+  updatedBy  String?  @db.Char(10)
+  updatedAt  DateTime
+  company_id String   @db.Char(5)
+  branch_id  String   @db.Char(10)
+
+  im_floor im_Floor              @relation(fields: [floor_id], references: [id], onDelete: NoAction)
+  im_row   im_Row[]
+  status   sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+
+  @@id([floor_id, id], map: "pk_ic_shelf")
+  @@unique([floor_id, id], map: "unique_floor_id_shelf_id")
+}
+
+model im_Row {
+  floor_id   String                @db.Char(5)
+  shelf_id   String                @db.Char(15)
+  id         String                @db.Char(15)
+  name       String?               @db.Char(35)
+  iStatus    Int                   @db.SmallInt
+  createdBy  String?               @db.Char(10)
+  createdAt  DateTime
+  updatedBy  String?               @db.Char(10)
+  updatedAt  DateTime
+  company_id String                @db.Char(5)
+  branch_id  String                @db.Char(10)
+  storages   String?               @db.Char(15)
+  status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+  floor      im_Floor              @relation(fields: [floor_id], references: [id], onDelete: NoAction)
+  shelf      im_Shelf              @relation(fields: [floor_id, shelf_id], references: [floor_id, id], onDelete: NoAction)
+
+  @@id([floor_id, shelf_id, id], map: "pk_ic_row")
+  @@unique([floor_id, shelf_id, id], map: "unique_floor_id_shelf_id_row_id")
+}
+
+model im_Warehouse {
+  id         String                @id @db.Char(4)
+  name       String?               @db.Char(60)
+  iMain      Int?                  @db.Integer
+  iStatus    Int                   @db.SmallInt
+  address    String?               @db.VarChar(250)
+  postalCode String?               @db.Char(6)
+  phone      String?               @db.Char(12)
+  createdBy  String?               @db.Char(10)
+  createdAt  DateTime
+  updatedBy  String?               @db.Char(10)
+  updatedAt  DateTime
+  company_id String                @db.Char(5)
+  branch_id  String                @db.Char(10)
+  status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+
+  @@unique([id])
+}
+
+/**
+ * Product grouping
+ */
+model im_Uoms {
+  id         String   @id @db.Char(10)
+  name       String?  @db.VarChar(150)
+  iStatus    Int      @db.SmallInt
+  remarks    String?  @db.VarChar(250)
+  createdBy  String?  @db.Char(10)
+  createdAt  DateTime @default(now())
+  updatedBy  String?  @db.Char(10)
+  updatedAt  DateTime
+  company_id String   @db.Char(5)
+  branch_id  String   @db.Char(10)
+  // categoryType        CategoryTypes[]
+  // products            Products[]
+}
+
+model im_CategoryTypes {
+  id           Int                   @id @db.SmallInt
+  name         String?               @db.VarChar(20)
+  iStatus      Int                   @db.SmallInt
+  remarks      String?               @db.VarChar(250)
+  stock_acct   String?               @db.Char(10)
+  sales_acct   String?               @db.Char(10)
+  cogs_acct    String?               @db.Char(10)
+  expense_acct String?               @db.Char(10)
+  asset_acct   String?               @db.Char(10)
+  createdBy    String?               @db.Char(10)
+  createdAt    DateTime              @default(now())
+  updatedBy    String?               @db.Char(10)
+  updatedAt    DateTime
+  company_id   String                @db.Char(5)
+  branch_id    String                @db.Char(10)
+  // categories   im_Categories[]
+  status       sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+}
+
+model im_Categories {
+  type             Int                @db.SmallInt
+  id               String             @unique @db.Char(10)
+  name             String?            @db.VarChar(60)
+  slug             String             @unique @default(uuid()) @db.VarChar(50)
+  iStatus          Int                @db.SmallInt
+  remarks          String?            @db.VarChar(250)
+  iShowedStatus    Boolean            @default(false)
+  createdBy        String?            @db.Char(10)
+  createdAt        DateTime           @default(now())
+  updatedBy        String?            @db.Char(10)
+  updatedAt        DateTime
+  company_id       String             @db.Char(5)
+  branch_id        String             @db.Char(10)
+  href             String?            @db.VarChar(150)
+  icon             String?            @db.VarChar(50)
+  // status        sys_MasterTableStatus @relation(fields: [iStatus], references: [id])
+  // categoryTypes im_CategoryTypes      @relation(fields: [type], references: [id], onUpdate: NoAction)
+  // subCategories im_SubCategories[]
+  // images        im_CategoryImages[]
+  im_SubCategories im_SubCategories[]
+
+  @@id([id, company_id], map: "pk_im_Categories")
+  @@index([id, company_id])
+}
+
+model im_SubCategories {
+  id          String        @db.Char(10)
+  category_id String        @db.Char(10)
+  name        String        @db.VarChar(50)
+  slug        String        @db.VarChar(50)
+  iStatus     Int           @db.SmallInt
+  remarks     String?       @db.VarChar(250)
+  createdBy   String?       @db.Char(10)
+  createdAt   DateTime      @default(now())
+  updatedBy   String?       @db.Char(10)
+  updatedAt   DateTime
+  company_id  String        @db.Char(5)
+  branch_id   String        @db.Char(10)
+  // status      sys_MasterTableStatus @relation(fields: [iStatus], references: [id], onUpdate: NoAction)
+  category    im_Categories @relation(fields: [category_id], references: [id])
+
+  @@id([category_id, id, company_id], map: "pk_im_SubCategories")
+  @@unique([category_id, id, company_id], name: "category_id_id_company_id") // Compound unique key
+}
+
+// model im_CategoryImages {
+//   id          Int           @default(autoincrement())
+//   category_id String        @db.Char(10)
+//   imageURL    String        @db.VarChar(250)
+//   isPrimary   Boolean?      @default(false)
+//   deleted     Boolean       @default(false)
+//   createdBy   String?       @db.Char(10)
+//   createdAt   DateTime      @default(now())
+//   updatedBy   String?       @db.Char(10)
+//   updatedAt   DateTime
+//   company_id  String        @db.Char(5)
+//   branch_id   String        @db.Char(10)
+//   // categories  im_Categories @relation(fields: [category_id, company_id], references: [id, company_id])
+
+//   @@id([id, company_id], map: "pk_im_CategoryImages")
+//   @@index([category_id, company_id])
+// }
+
+model im_Brands {
+  id         String                @id @db.Char(10)
+  name       String?               @db.VarChar(50)
+  slug       String?               @db.VarChar(50)
+  iStatus    Int                   @db.SmallInt
+  remarks    String?               @db.VarChar(250)
+  createdBy  String?               @db.Char(10)
+  createdAt  DateTime              @default(now())
+  updatedBy  String?               @db.Char(10)
+  updatedAt  DateTime
+  company_id String                @db.Char(5)
+  branch_id  String                @db.Char(10)
+  status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id], onUpdate: NoAction)
+  // products            Products[]
+}
+
+/**
+ * Product
+ */
+
+model im_Products {
+  id             String   @db.Char(20)
+  register_id    String?  @db.Char(20)
+  catalog_id     String?  @db.Char(20)
+  name           String   @db.VarChar(250)
+  category_id    String   @db.Char(10)
+  subCategory_id String   @db.Char(10)
+  brand_id       String   @db.Char(10)
+  iStatus        Int      @db.SmallInt
+  slug           String?  @db.VarChar(250)
+  isMaterial     Boolean  @default(false)
+  isService      Boolean  @default(false)
+  isFinishing    Boolean  @default(false)
+  isAccessories  Boolean  @default(false)
+  iShowedStatus  Boolean  @default(false)
+  uom_id         String?  @db.Char(10)
+  createdBy      String?  @db.Char(10)
+  createdAt      DateTime @default(now())
+  updatedBy      String?  @db.Char(10)
+  updatedAt      DateTime
+  company_id     String   @db.Char(5)
+  branch_id      String   @db.Char(10)
+  // stocks         im_ProductStocks[]
+  // images         im_ProductImages[]
+  // descriptions   im_ProductDescs[]
+
+  @@id([company_id, id], map: "pk_im_Products")
+  // category            Categories?        @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  // subcategory         SubCategories?      @relation(fields: [subCategory_id], references: [id], onUpdate: NoAction)
+  // brands              Brands?             @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
+  // status              MasterTableStatus  @relation(fields: [iStatus], references: [id], onUpdate: NoAction)
+  // uom                 Uoms?              @relation(fields: [uom_id], references: [id])
+  // showStatus          MasterShowedStatus @relation(fields: [iShowedStatus], references: [id])
+  @@index([company_id, id])
+}
+
+model im_ProductStocks {
+  id                 String   @db.Char(20)
+  iStatus            Int      @db.SmallInt
+  warehouse_id       String   @db.Char(4)
+  floor_id           String   @db.Char(5)
+  shelf_id           String   @db.Char(15)
+  row_id             String   @db.Char(15)
+  batch_no           String   @db.Char(20)
+  rec_id             Decimal  @db.Decimal(18, 0)
+  mExpired_dt        String   @db.Char(10)
+  yExpired_dt        String   @db.Char(4)
+  product_cd         String?  @db.Char(20)
+  i_month_expired    Int?
+  i_year_expired     Int?
+  req_qty            Decimal? @db.Decimal(12, 4)
+  po_qty             Decimal? @db.Decimal(12, 4)
+  grn_qty            Decimal? @db.Decimal(12, 4)
+  so_qty             Decimal? @db.Decimal(12, 4)
+  spk_qty            Decimal? @db.Decimal(12, 4)
+  sj_qty             Decimal? @db.Decimal(12, 4)
+  sl_invoice_qty     Decimal? @db.Decimal(12, 4)
+  sl_return_qty      Decimal? @db.Decimal(12, 4)
+  po_return_qty      Decimal? @db.Decimal(12, 4)
+  stock_opname_qty   Decimal? @db.Decimal(12, 4)
+  intern_receive_qty Decimal? @db.Decimal(12, 4)
+  intern_issue_qty   Decimal? @db.Decimal(12, 4)
+  onhand_qty         Decimal? @db.Decimal(22, 4)
+  unit_cost          Decimal? @db.Decimal(21, 4)
+  selling_price      Decimal? @db.Decimal(21, 4)
+  createdBy          String?  @db.Char(10)
+  createdAt          DateTime @default(now())
+  updatedBy          String?  @db.Char(10)
+  updatedAt          DateTime
+  company_id         String   @db.Char(5)
+  branch_id          String   @db.Char(10)
+  // products           im_Products @relation(fields: [id, company_id], references: [id, company_id])
+
+  @@id([company_id, warehouse_id, id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
+  @@index([company_id, warehouse_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
+}
+
+model im_ProductStockCard {
+  customer_id     String   @db.Char(20)
+  supplier_id     String   @db.Char(20)
+  trx_id          String   @db.Char(2)
+  trx_class       String   @db.Char(2)
+  module_id       String   @db.Char(2)
+  is_in_or_out    String   @db.Char(1)
+  doc_year        Int      @db.SmallInt
+  doc_month       Int      @db.SmallInt
+  doc_date        DateTime
+  doc_id          String   @db.Char(20)
+  descs           String?  @db.VarChar(250)
+  ageing_date     DateTime
+  mutation_id     String   @db.Char(20)
+  mutation_date   DateTime
+  ref_id          String   @db.Char(20)
+  ref_date        DateTime
+  iStatus         Int      @db.SmallInt
+  warehouse_id    String   @db.Char(4)
+  to_warehouse_id String   @db.Char(4)
+  rec_id          Decimal  @db.Decimal(18, 0)
+  product_id      String   @db.Char(20)
+  qty             Decimal  @db.Decimal(12, 4)
+  mutation_qty    Decimal  @db.Decimal(12, 4)
+  uom_id          String   @db.Char(10)
+  unit_cost       Decimal? @db.Decimal(21, 4)
+  mutation_cost   Decimal? @db.Decimal(21, 4)
+  floor_id        String   @db.Char(5)
+  shelf_id        String   @db.Char(15)
+  row_id          String   @db.Char(15)
+  batch_no        String   @db.Char(20)
+  mExpired_dt     String   @db.Char(10)
+  yExpired_dt     String   @db.Char(4)
+  product_cd      String?  @db.Char(20)
+  i_month_expired Int?
+  i_year_expired  Int?
+  selling_price   Decimal? @db.Decimal(21, 4)
+  createdBy       String?  @db.Char(10)
+  createdAt       DateTime @default(now())
+  updatedBy       String?  @db.Char(10)
+  updatedAt       DateTime
+  company_id      String   @db.Char(5)
+  branch_id       String   @db.Char(10)
+
+  @@id([company_id, warehouse_id, doc_id, mutation_id, product_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
+  @@index([company_id, warehouse_id, doc_id, mutation_id, product_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
+}
+
+// model im_ProductDescs {
+//   id           String      @id @db.Char(20)
+//   descriptions String?     @db.Text
+//   createdBy    String?     @db.Char(10)
+//   createdAt    DateTime    @default(now())
+//   updatedBy    String?     @db.Char(10)
+//   updatedAt    DateTime
+//   company_id   String      @db.Char(5)
+//   branch_id    String      @db.Char(10)
+//   // products              Products      @relation(fields: [id], references: [id])
+//   products     im_Products @relation(fields: [id, company_id], references: [id, company_id])
+// }
+
+// model im_ProductImages {
+//   id         String      @id @db.Char(25)
+//   product_id String      @db.Char(20)
+//   imageURL   String      @db.VarChar(250)
+//   isPrimary  Boolean     @default(false)
+//   isDeleted  Boolean     @default(false)
+//   createdBy  String?     @db.Char(10)
+//   createdAt  DateTime    @default(now())
+//   updatedBy  String?     @db.Char(10)
+//   updatedAt  DateTime
+//   company_id String      @db.Char(5)
+//   branch_id  String      @db.Char(10)
+//   products   im_Products @relation(fields: [product_id, company_id], references: [id, company_id])
+
+//   @@index([product_id])
+// }

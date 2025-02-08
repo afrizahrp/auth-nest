@@ -8,7 +8,7 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateUserDto) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.sys_User.findUnique({
       where: {
         name: dto.name,
       },
@@ -18,11 +18,12 @@ export class UserService {
       throw new ConflictException('Email already exists');
     }
 
-    const newUser = await this.prisma.user.create({
+    const newUser = await this.prisma.sys_User.create({
       data: {
         name: dto.name,
         email: dto.email,
         password: await hash(dto.password, 10),
+        role_id: dto.role_id,
       },
     });
 
@@ -31,16 +32,27 @@ export class UserService {
   }
 
   async findByName(name: string) {
-    return this.prisma.user.findUnique({
+    return this.prisma.sys_User.findUnique({
       where: {
         name,
       },
     });
   }
   async findById(id: number) {
-    return this.prisma.user.findUnique({
+    return this.prisma.sys_User.findUnique({
       where: {
         id,
+      },
+    });
+  }
+
+  async updateHashedRefreshToken(userId: number, hashedRT: string | null) {
+    return await this.prisma.sys_User.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        hashedRefreshToken: hashedRT,
       },
     });
   }

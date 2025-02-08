@@ -9,4 +9,7 @@ export class CreateUserDto {
 
   @IsString()
   password: string; // Tambahkan field tambahan jika diperlukan
+
+  @IsString()
+  role_id: string;
 }
