@@ -204,7 +204,7 @@ model im_Categories {
   type             Int                @db.SmallInt
   id               String             @unique @db.Char(10)
   name             String?            @db.VarChar(60)
-  slug             String             @unique @default(uuid()) @db.VarChar(50)
+  slug             String?            @unique @default(uuid()) @db.VarChar(50)
   iStatus          Int                @db.SmallInt
   remarks          String?            @db.VarChar(250)
   iShowedStatus    Boolean            @default(false)
