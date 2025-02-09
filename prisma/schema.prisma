@@ -14,6 +14,19 @@ datasource db {
   url      = env("POSTGRESQL_URL")
 }
 
+model sys_Company {
+  id         Int      @id @db.SmallInt
+  name       String?  @db.VarChar(50)
+  npwp       String?  @db.Char(25)
+  remarks    String?  @db.VarChar(150)
+  createdBy  String?  @db.Char(10)
+  createdAt  DateTime @default(now())
+  updatedBy  String?  @db.Char(10)
+  updatedAt  DateTime
+  company_id String   @db.Char(5)
+  branch_id  String   @db.Char(10)
+}
+
 model sys_MasterTableStatus {
   id               Int                @id @db.SmallInt
   name             String?            @db.VarChar(50)
@@ -164,7 +177,7 @@ model im_Warehouse {
  * Product grouping
  */
 model im_Uoms {
-  id         String   @db.Char(10)
+  id         String   @id @db.Char(10)
   name       String?  @db.VarChar(150)
   iStatus    Int      @db.SmallInt
   remarks    String?  @db.VarChar(250)
@@ -177,7 +190,6 @@ model im_Uoms {
 
   // categoryType        CategoryTypes[]
   // products            Products[]
-  @@id([company_id, id], map: "pk_im_Uoms")
 }
 
 model im_CategoryTypes {
@@ -202,12 +214,12 @@ model im_CategoryTypes {
 
 model im_Categories {
   type             Int                @db.SmallInt
-  id               String             @unique @db.Char(10)
+  id               String             @id @db.Char(10)
   name             String?            @db.VarChar(60)
   slug             String?            @unique @default(uuid()) @db.VarChar(50)
   iStatus          Int                @db.SmallInt
   remarks          String?            @db.VarChar(250)
-  iShowedStatus    Boolean            @default(false)
+  iShowedStatus    Boolean?           @default(false)
   createdBy        String?            @db.Char(10)
   createdAt        DateTime           @default(now())
   updatedBy        String?            @db.Char(10)
@@ -218,8 +230,7 @@ model im_Categories {
   icon             String?            @db.VarChar(50)
   im_SubCategories im_SubCategories[]
 
-  @@id([id, company_id], map: "pk_im_Categories")
-  @@index([id, company_id])
+  // @@id([id], map: "pk_im_Categories")
 }
 
 model im_SubCategories {
@@ -237,8 +248,7 @@ model im_SubCategories {
   branch_id   String        @db.Char(10)
   category    im_Categories @relation(fields: [category_id], references: [id])
 
-  @@id([category_id, id, company_id], map: "pk_im_SubCategories")
-  @@unique([category_id, id, company_id], name: "category_id_id_company_id") // Compound unique key
+  @@id([category_id, id], map: "pk_im_SubCategories")
 }
 
 model im_Brands {
@@ -255,7 +265,7 @@ model im_Brands {
   branch_id  String                @db.Char(10)
   status     sys_MasterTableStatus @relation(fields: [iStatus], references: [id], onUpdate: NoAction)
 
-  @@id([company_id, id], map: "pk_im_Brands")
+  @@id([id], map: "pk_im_Brands")
 }
 
 /**
@@ -263,70 +273,71 @@ model im_Brands {
  */
 
 model im_Products {
-  id             String   @db.Char(20)
-  register_id    String?  @db.Char(20)
-  catalog_id     String?  @db.Char(20)
-  name           String   @db.VarChar(250)
-  category_id    String   @db.Char(10)
-  subCategory_id String   @db.Char(10)
-  brand_id       String   @db.Char(10)
-  iStatus        Int      @db.SmallInt
-  slug           String?  @db.VarChar(250)
-  isMaterial     Boolean  @default(false)
-  isService      Boolean  @default(false)
-  isFinishing    Boolean  @default(false)
-  isAccessories  Boolean  @default(false)
-  iShowedStatus  Boolean  @default(false)
-  uom_id         String?  @db.Char(10)
-  createdBy      String?  @db.Char(10)
-  createdAt      DateTime @default(now())
-  updatedBy      String?  @db.Char(10)
+  id             String            @db.Char(20)
+  register_id    String?           @db.Char(20)
+  catalog_id     String?           @db.Char(20)
+  name           String            @db.VarChar(250)
+  category_id    String            @db.Char(10)
+  subCategory_id String            @db.Char(10)
+  brand_id       String            @db.Char(10)
+  iStatus        Int               @db.SmallInt
+  slug           String?           @db.VarChar(250)
+  isMaterial     Boolean           @default(false)
+  isService      Boolean           @default(false)
+  isFinishing    Boolean           @default(false)
+  isAccessories  Boolean           @default(false)
+  iShowedStatus  Boolean           @default(false)
+  uom_id         String?           @db.Char(10)
+  createdBy      String?           @db.Char(10)
+  createdAt      DateTime          @default(now())
+  updatedBy      String?           @db.Char(10)
   updatedAt      DateTime
-  company_id     String   @db.Char(5)
-  branch_id      String   @db.Char(10)
+  company_id     String            @db.Char(5)
+  branch_id      String            @db.Char(10)
+  productStock   im_ProductStock[]
 
   @@id([company_id, id], map: "pk_im_Products")
-  @@index([company_id, id])
+  @@unique([company_id, id], map: "unique_company_id_id")
 }
 
-model im_ProductStocks {
-  id                 String   @db.Char(20)
-  iStatus            Int      @db.SmallInt
-  warehouse_id       String   @db.Char(4)
-  floor_id           String   @db.Char(5)
-  shelf_id           String   @db.Char(15)
-  row_id             String   @db.Char(15)
-  batch_no           String   @db.Char(20)
-  rec_id             Decimal  @db.Decimal(18, 0)
-  mExpired_dt        String   @db.Char(10)
-  yExpired_dt        String   @db.Char(4)
-  product_cd         String?  @db.Char(20)
+model im_ProductStock {
+  id                 String      @db.Char(20)
+  iStatus            Int         @db.SmallInt
+  warehouse_id       String      @db.Char(4)
+  floor_id           String      @db.Char(5)
+  shelf_id           String      @db.Char(15)
+  row_id             String      @db.Char(15)
+  batch_no           String      @db.Char(20)
+  rec_id             Decimal     @db.Decimal(18, 0)
+  mExpired_dt        String      @db.Char(10)
+  yExpired_dt        String      @db.Char(4)
+  product_cd         String?     @db.Char(20)
   i_month_expired    Int?
   i_year_expired     Int?
-  req_qty            Decimal? @db.Decimal(12, 4)
-  po_qty             Decimal? @db.Decimal(12, 4)
-  grn_qty            Decimal? @db.Decimal(12, 4)
-  so_qty             Decimal? @db.Decimal(12, 4)
-  spk_qty            Decimal? @db.Decimal(12, 4)
-  sj_qty             Decimal? @db.Decimal(12, 4)
-  sl_invoice_qty     Decimal? @db.Decimal(12, 4)
-  sl_return_qty      Decimal? @db.Decimal(12, 4)
-  po_return_qty      Decimal? @db.Decimal(12, 4)
-  stock_opname_qty   Decimal? @db.Decimal(12, 4)
-  intern_receive_qty Decimal? @db.Decimal(12, 4)
-  intern_issue_qty   Decimal? @db.Decimal(12, 4)
-  onhand_qty         Decimal? @db.Decimal(22, 4)
-  unit_cost          Decimal? @db.Decimal(21, 4)
-  selling_price      Decimal? @db.Decimal(21, 4)
-  createdBy          String?  @db.Char(10)
-  createdAt          DateTime @default(now())
-  updatedBy          String?  @db.Char(10)
+  req_qty            Decimal?    @db.Decimal(12, 4)
+  po_qty             Decimal?    @db.Decimal(12, 4)
+  grn_qty            Decimal?    @db.Decimal(12, 4)
+  so_qty             Decimal?    @db.Decimal(12, 4)
+  spk_qty            Decimal?    @db.Decimal(12, 4)
+  sj_qty             Decimal?    @db.Decimal(12, 4)
+  sl_invoice_qty     Decimal?    @db.Decimal(12, 4)
+  sl_return_qty      Decimal?    @db.Decimal(12, 4)
+  po_return_qty      Decimal?    @db.Decimal(12, 4)
+  stock_opname_qty   Decimal?    @db.Decimal(12, 4)
+  intern_receive_qty Decimal?    @db.Decimal(12, 4)
+  intern_issue_qty   Decimal?    @db.Decimal(12, 4)
+  onhand_qty         Decimal?    @db.Decimal(22, 4)
+  unit_cost          Decimal?    @db.Decimal(21, 4)
+  selling_price      Decimal?    @db.Decimal(21, 4)
+  createdBy          String?     @db.Char(10)
+  createdAt          DateTime    @default(now())
+  updatedBy          String?     @db.Char(10)
   updatedAt          DateTime
-  company_id         String   @db.Char(5)
-  branch_id          String   @db.Char(10)
+  company_id         String      @db.Char(5)
+  branch_id          String      @db.Char(10)
+  products           im_Products @relation(fields: [id, company_id], references: [id, company_id], onUpdate: NoAction)
 
   @@id([company_id, warehouse_id, id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
-  @@index([company_id, warehouse_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
 }
 
 model im_ProductStockCard {
@@ -374,5 +385,4 @@ model im_ProductStockCard {
   branch_id       String   @db.Char(10)
 
   @@id([company_id, warehouse_id, doc_id, mutation_id, product_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
-  @@index([company_id, warehouse_id, doc_id, mutation_id, product_id, floor_id, shelf_id, row_id, mExpired_dt, yExpired_dt])
 }
